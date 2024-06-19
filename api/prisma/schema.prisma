@@ -1,0 +1,34 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Device {
+  id                Int     @id @default(autoincrement())
+  name              String
+  host              String  @unique
+  username          String
+  password          String
+  frequency_days    Int     @default(0)
+  frequency_hours   Int     @default(0)
+  frequency_minutes Int     @default(0)
+  max_backup_limit  Int
+
+  backups       Backup[]
+}
+
+model Backup {
+  id         Int      @id @default(autoincrement())
+  name       String
+  date       DateTime
+
+  device     Device   @relation(fields: [deviceId], references: [id])
+  deviceId   Int
+}

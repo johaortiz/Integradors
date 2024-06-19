@@ -1,0 +1,7 @@
+-- CreateTable
+CREATE TABLE "Backup" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "deviceId" INTEGER NOT NULL,
+    CONSTRAINT "Backup_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "Device" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
