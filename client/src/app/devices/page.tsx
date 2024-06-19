@@ -9,14 +9,14 @@ export default function Devices() {
 
     const fetchDevices = async () => {
         try {
-            const response = await fetch('http://localhost:3000/devices');
+            const response = await fetch('http://localhost:3001/devices');
             const data = await response.json();
             setDevices(data);
         } catch (error) {
             console.error('Error fetching devices:', error);
         }
     };
-
+    
     useEffect(() => {
         fetchDevices();
     }, []);
@@ -29,18 +29,27 @@ export default function Devices() {
     };
 
     const addNewDeviceForm = () => {
-        setNewDevices([...newDevices, { host: '', ip: '', name: '', user: '', password: '', isConnected: false }]);
+        setNewDevices([...newDevices, { host: '', name: '', username: '', password: '', frequency_minutes: 0, max_backup_limit: 0 }]);
     };
 
     const saveDevices = async () => {
         try {
             for (const device of newDevices) {
-                await fetch('http://localhost:3000/devices', {
+                const parsedDevice = {
+                    host: device.host || '',
+                    name: device.name || '',
+                    username: device.username || '',
+                    password: device.password || '',
+                    frequency_minutes: new Number(device.frequency_minutes) || new Number(0),
+                    max_backup_limit: new Number(device.max_backup_limit) || new Number(0),
+                };
+    
+                await fetch('http://localhost:3001/devices', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(device),
+                    body: JSON.stringify(parsedDevice),
                 });
             }
             fetchDevices();
@@ -49,6 +58,7 @@ export default function Devices() {
             console.error('Error saving devices:', error);
         }
     };
+    
 
     const router = useRouter();
 
@@ -56,48 +66,24 @@ export default function Devices() {
         try {
             if (isExisting) {
                 const device = devices[index];
-                await fetch(`http://localhost:3000/devices/${device.id}`, {
+                await fetch(`http://localhost:3001/devices/${device.id}`, {
                     method: 'DELETE',
                 });
-                setDevices(devices.filter((_: any, i: any) => i !== index));
+                setDevices(devices.filter((_, i) => i !== index));
             } else {
-                setNewDevices(newDevices.filter((_: any, i: any) => i !== index));
+                setNewDevices(newDevices.filter((_, i) => i !== index));
             }
         } catch (error) {
             console.error('Error removing device:', error);
         }
     };
 
-    const toggleConnection = async (index: number, isExisting: boolean) => {
-        const updatedDevices = isExisting ? [...devices] : [...newDevices];
-        const device = updatedDevices[index];
-        const action = device.isConnected ? 'disconnect' : 'connect';
-
-        try {
-            const response = await fetch(`/api/devices/${action}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ host: device.host, ip: device.ip }),
-            });
-
-            if (response.ok) {
-                updatedDevices[index] = { ...device, isConnected: !device.isConnected };
-                if (isExisting) {
-                    setDevices(updatedDevices);
-                } else {
-                    setNewDevices(updatedDevices);
-                }
-            }
-        } catch (error) {
-            console.error('Error toggling connection:', error);
-        }
-    };
-
     const handleRowClick = (host: string, id: string) => {
         router.push(`/${host}/${id}`);
-    };
+    };    
+
+    console.log(devices);
+    
 
     return (
         <div className="flex flex-col justify-center items-center w-full py-4 gap-y-12">
@@ -106,31 +92,26 @@ export default function Devices() {
                 <table className="table table-hover w-full">
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Host</th>
-                            <th>IP</th>
                             <th>Nombre</th>
                             <th>Usuario</th>
                             <th>Contraseña</th>
-                            <th>Estado</th>
+                            <th>Frecuencia de Backups</th>
+                            <th>Límite de Backups</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {devices.map((device: any, index: any) => (
-                            <tr key={index} onClick={() => handleRowClick(device.host, device.id)}>
+                        {devices.map((device, index) => (
+                            <tr key={device.id}>
+                                <td className='cursor-pointer' onClick={() => handleRowClick(device.host, device.id)}>{device.id}</td>
                                 <td>{device.host}</td>
-                                <td>{device.ip}</td>
                                 <td>{device.name}</td>
-                                <td>{device.user}</td>
+                                <td>{device.username}</td>
                                 <td>{device.password}</td>
-                                <td>
-                                    <button
-                                        onClick={() => toggleConnection(index, true)}
-                                        className={`p-1 rounded ${device.isConnected ? 'bg-red-500' : 'bg-green-500'} text-white`}
-                                    >
-                                        {device.isConnected ? 'Desconectar' : 'Conectar'}
-                                    </button>
-                                </td>
+                                <td>{device.frequency_minutes} min</td>
+                                <td>{device.max_backup_limit}</td>
                                 <td className="text-center">
                                     <span
                                         onClick={() => removeDevice(index, true)}
@@ -141,7 +122,7 @@ export default function Devices() {
                                 </td>
                             </tr>
                         ))}
-                        {newDevices.map((device: any, index: any) => (
+                        {newDevices.map((device, index) => (
                             <motion.tr
                                 key={index}
                                 initial={{ opacity: 0 }}
@@ -149,19 +130,13 @@ export default function Devices() {
                                 transition={{ duration: 0.5 }}
                             >
                                 <td>
-                                    <input
-                                        type="text"
-                                        name="host"
-                                        value={device.host}
-                                        onChange={(e) => handleInputChange(e, index)}
-                                        className="border p-1 w-full rounded-lg"
-                                    />
+                                    Autogenerado
                                 </td>
                                 <td>
                                     <input
                                         type="text"
-                                        name="ip"
-                                        value={device.ip}
+                                        name="host"
+                                        value={device.host}
                                         onChange={(e) => handleInputChange(e, index)}
                                         className="border p-1 w-full rounded-lg"
                                     />
@@ -178,8 +153,8 @@ export default function Devices() {
                                 <td>
                                     <input
                                         type="text"
-                                        name="user"
-                                        value={device.user}
+                                        name="username"
+                                        value={device.username}
                                         onChange={(e) => handleInputChange(e, index)}
                                         className="border p-1 w-full rounded-lg"
                                     />
@@ -194,12 +169,22 @@ export default function Devices() {
                                     />
                                 </td>
                                 <td>
-                                    <button
-                                        onClick={() => toggleConnection(index, false)}
-                                        className={`p-1 rounded ${device.isConnected ? 'bg-red-500' : 'bg-green-500'} text-white`}
-                                    >
-                                        {device.isConnected ? 'Desconectar' : 'Conectar'}
-                                    </button>
+                                    <input
+                                        type="text"
+                                        name="frequency_minutes"
+                                        value={device.frequency_minutes}
+                                        onChange={(e) => handleInputChange(e, index)}
+                                        className="border p-1 w-full rounded-lg"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        name="max_backup_limit"
+                                        value={device.max_backup_limit}
+                                        onChange={(e) => handleInputChange(e, index)}
+                                        className="border p-1 w-full rounded-lg"
+                                    />
                                 </td>
                                 <td className="text-center">
                                     <span
@@ -212,7 +197,7 @@ export default function Devices() {
                             </motion.tr>
                         ))}
                         <tr>
-                            <td colSpan={7} onClick={addNewDeviceForm} className="text-center cursor-pointer">
+                            <td colSpan={8} onClick={addNewDeviceForm} className="text-center cursor-pointer">
                                 Añadir Nuevo Dispositivo
                             </td>
                         </tr>
