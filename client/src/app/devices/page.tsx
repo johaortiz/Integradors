@@ -25,7 +25,6 @@ export default function Devices() {
         const { name, value } = e.target;
         const updatedDevices = [...newDevices];
         if (name === 'frequency_minutes') {
-            // Separar el valor de frequency_minutes por comas y eliminar los espacios
             const frequencies = value.split(',').map(freq => freq.trim());
             updatedDevices[index] = { ...updatedDevices[index], [name]: frequencies };
         } else {

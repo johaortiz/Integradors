@@ -44,8 +44,6 @@ deviceRouter.post("/:id/backups", async (req, res) => {
     const conn = await connectToDevice(config);
 
     const backupCount = await getBackupCount(prisma, device.id);
-    
-    console.log(device);
 
     let countBackuptoDelete = backupCount - device.max_backup_limit + 1;
     if (countBackuptoDelete < 0) countBackuptoDelete = 0;
