@@ -20,16 +20,25 @@ export default function Devices() {
     useEffect(() => {
         fetchDevices();
     }, []);
-
+    
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>, index: number) => {
         const { name, value } = e.target;
         const updatedDevices = [...newDevices];
-        updatedDevices[index] = { ...updatedDevices[index], [name]: value };
+        if (name === 'frequency_minutes') {
+            // Separar el valor de frequency_minutes por comas y eliminar los espacios
+            const frequencies = value.split(',').map(freq => freq.trim());
+            updatedDevices[index] = { ...updatedDevices[index], [name]: frequencies };
+        } else {
+            updatedDevices[index] = { ...updatedDevices[index], [name]: value };
+        }
         setNewDevices(updatedDevices);
     };
+    
+    console.log(newDevices);
+    
 
     const addNewDeviceForm = () => {
-        setNewDevices([...newDevices, { host: '', name: '', username: '', password: '', frequency_minutes: 0, max_backup_limit: 0 }]);
+        setNewDevices([...newDevices, { host: '', name: '', username: '', password: '', frequency_minutes: "", max_backup_limit: "" }]);
     };
 
     const saveDevices = async () => {
@@ -40,7 +49,9 @@ export default function Devices() {
                     name: device.name || '',
                     username: device.username || '',
                     password: device.password || '',
-                    frequency_minutes: new Number(device.frequency_minutes) || new Number(0),
+                    frequency_minutes: new Number(device.frequency_minutes[0]) || new Number(0),
+                    frequency_hours: new Number(device.frequency_minutes[1]) || new Number(0),
+                    frequency_days: new Number(device.frequency_minutes[2]) || new Number(0),
                     max_backup_limit: new Number(device.max_backup_limit) || new Number(0),
                 };
     
@@ -81,8 +92,6 @@ export default function Devices() {
     const handleRowClick = (host: string, id: string) => {
         router.push(`/${host}/${id}`);
     };    
-
-    console.log(devices);
     
 
     return (
@@ -110,7 +119,7 @@ export default function Devices() {
                                 <td>{device.name}</td>
                                 <td>{device.username}</td>
                                 <td>{device.password}</td>
-                                <td>{device.frequency_minutes} min</td>
+                                <td>{device.frequency_minutes} min, {device.frequency_hours} hs, {device.frequency_days} d</td>
                                 <td>{device.max_backup_limit}</td>
                                 <td className="text-center">
                                     <span
